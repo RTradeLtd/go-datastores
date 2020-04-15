@@ -1,3 +1,4 @@
-# repo-template
+# go-datastores
 
-GitHub repository template for Golang projects using codecov and travis CI. Includes a `Makefile` for common development workflow tasks, such as dependency updates, linting, formatting, etc..
+
+A collection of IPFS datastores in a single monorepo for easy maintenance

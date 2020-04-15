@@ -52,6 +52,9 @@ func Test_Batch(t *testing.T) {
 	key3 := datastore.NewKey("keks3")
 	data := []byte("hello world")
 	batcher, err := ds.Batch()
+	if err != nil {
+		t.Fatal(err)
+	}
 	type args struct {
 		key datastore.Key
 	}

@@ -1,4 +1,4 @@
-package badger
+package dsbadger
 
 import (
 	"bytes"
@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ipfs/go-datastore"
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
 	dstest "github.com/ipfs/go-datastore/test"
@@ -99,14 +98,14 @@ func Test_Sync(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ds, done := newDSSync(t, tt.args.sync)
-			if ds.syncWrites != tt.args.sync {
+			datastore, done := newDSSync(t, tt.args.sync)
+			if datastore.syncWrites != tt.args.sync {
 				t.Fatal("bad sync writes setting")
 			}
-			if err := ds.Sync(datastore.NewKey("notneeded")); err != nil {
+			if err := datastore.Sync(ds.NewKey("notneeded")); err != nil {
 				t.Fatal(err)
 			}
-			txxn, err := ds.NewTransaction(true)
+			txxn, err := datastore.NewTransaction(true)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -114,11 +113,11 @@ func Test_Sync(t *testing.T) {
 			if !ok {
 				t.Fatal("bad type")
 			}
-			if err := ttxn.Sync(datastore.NewKey("hmm")); err != nil {
+			if err := ttxn.Sync(ds.NewKey("hmm")); err != nil {
 				t.Fatal(err)
 			}
 			done()
-			if err := ttxn.Sync(datastore.NewKey("hmm")); err == nil {
+			if err := ttxn.Sync(ds.NewKey("hmm")); err == nil {
 				t.Fatal("error expected")
 			}
 		})
@@ -419,7 +418,7 @@ func TestClose(t *testing.T) {
 	if _, err := d.DiskUsage(); err == nil {
 		t.Fatal("error expected")
 	}
-	if err := d.Sync(datastore.NewKey("hmm")); err == nil {
+	if err := d.Sync(ds.NewKey("hmm")); err == nil {
 		t.Fatal("error expected")
 	}
 	if err := d.Close(); err == nil {
