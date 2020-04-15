@@ -70,8 +70,30 @@ func init() {
 		GcSleep:        10 * time.Second,
 		Options:        badger.DefaultOptions(""),
 	}
+	// This is to optimize the database on close so it can be opened
+	// read-only and efficiently queried. We don't do that and hanging on
+	// stop isn't nice.
 	DefaultOptions.Options.CompactL0OnClose = false
+	// The alternative is "crash on start and tell the user to fix it". This
+	// will truncate corrupt and unsynced data, which we don't guarantee to
+	// persist anyways.
 	DefaultOptions.Options.Truncate = true
+	/*
+		TODO(bonedaddy): consider if we want to enable this, it's from upstream
+		which uses badgerv1 as opposed to badgerv2 so it might not be necessary
+
+		// Uses less memory, is no slower when writing, and is faster when
+		// reading (in some tests).
+		DefaultOptions.Options.ValueLogLoadingMode = options.FileIO
+		// Explicitly set this to mmap. This doesn't use much memory anyways.
+		DefaultOptions.Options.TableLoadingMode = options.MemoryMap
+		// Reduce this from 64MiB to 16MiB. That means badger will hold on to
+		// 20MiB by default instead of 80MiB.
+		//
+		// This does not appear to have a significant performance hit.
+		DefaultOptions.Options.MaxTableSize = 16 << 20
+	*/
+
 }
 
 var _ ds.Datastore = (*Datastore)(nil)
@@ -507,8 +529,10 @@ func (t *txn) query(q dsq.Query) (dsq.Results, error) {
 	defer cancel()
 	opt := badger.DefaultIteratorOptions
 	opt.PrefetchValues = !q.KeysOnly
-	opt.Prefix = []byte(q.Prefix)
-
+	prefix := ds.NewKey(q.Prefix).String()
+	if prefix != "/" {
+		opt.Prefix = []byte(prefix + "/")
+	}
 	// Handle ordering
 	if len(q.Orders) > 0 {
 		switch q.Orders[0].(type) {
