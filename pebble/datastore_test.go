@@ -10,10 +10,10 @@ import (
 
 	"github.com/ipfs/go-datastore"
 	"github.com/ipfs/go-datastore/query"
+	dstest "github.com/ipfs/go-datastore/test"
 )
 
 func Test_NewDatastore(t *testing.T) {
-	defer os.RemoveAll("./tmp")
 	type args struct {
 		path string
 	}
@@ -32,6 +32,9 @@ func Test_NewDatastore(t *testing.T) {
 				t.Fatalf("NewDatastore() err = %v, wantErr %v", err, tt.wantErr)
 			}
 			if !tt.wantErr {
+				t.Cleanup(func() {
+					os.RemoveAll("./tmp")
+				})
 				if err := ds.Close(); err != nil {
 					t.Fatal(err)
 				}
@@ -41,12 +44,14 @@ func Test_NewDatastore(t *testing.T) {
 }
 
 func Test_Batch(t *testing.T) {
-	defer os.RemoveAll("./tmp")
 	ds, err := NewDatastore("./tmp", nil, true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer ds.Close()
+	t.Cleanup(func() {
+		ds.Close()
+		os.RemoveAll("./tmp")
+	})
 	key := datastore.NewKey("kek")
 	key2 := datastore.NewKey("keks")
 	key3 := datastore.NewKey("keks3")
@@ -92,11 +97,14 @@ func Test_Sync(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer os.RemoveAll("./tmp")
 			ds, err := NewDatastore("./tmp", nil, tt.args.sync)
 			if err != nil {
 				t.Fatal(err)
 			}
+			t.Cleanup(func() {
+				ds.Close()
+				os.RemoveAll("./tmp")
+			})
 			if ds.withSync != tt.args.sync {
 				t.Fatal("bad sync status")
 			}
@@ -108,12 +116,14 @@ func Test_Sync(t *testing.T) {
 }
 
 func Test_Datastore(t *testing.T) {
-	defer os.RemoveAll("./tmp")
 	ds, err := NewDatastore("./tmp", nil, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer ds.Close()
+	t.Cleanup(func() {
+		ds.Close()
+		os.RemoveAll("./tmp")
+	})
 	key := datastore.NewKey("kek")
 	key2 := datastore.NewKey("keks")
 	key3 := datastore.NewKey("keks3")
@@ -214,4 +224,17 @@ func Test_Datastore(t *testing.T) {
 	} else if size > 0 {
 		t.Fatal("size should be 0")
 	}
+}
+
+func TestSuite(t *testing.T) {
+	t.Skip("pebble not fully supported")
+	ds, err := NewDatastore("./tmp", nil, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		ds.Close()
+		os.RemoveAll("./tmp")
+	})
+	dstest.SubtestAll(t, ds)
 }
