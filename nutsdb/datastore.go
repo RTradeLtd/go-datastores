@@ -66,14 +66,7 @@ func (d *Datastore) Has(key datastore.Key) (exists bool, err error) {
 // In some contexts, it may be much cheaper to only get the size of the
 // value rather than retrieving the value itself.
 func (d *Datastore) GetSize(key datastore.Key) (size int, err error) {
-	err = d.db.View(func(tx *nutsdb.Tx) error {
-		size, err = tx.LSize(bucketName, key.Bytes())
-		return err
-	})
-	if err != nil && err == nutsdb.ErrBucket {
-		err = datastore.ErrNotFound
-	}
-	return
+	return datastore.GetBackedSize(d, key)
 }
 
 // Put stores the object `value` named by `key`.
