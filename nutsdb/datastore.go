@@ -1,7 +1,6 @@
 package nutsdb
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -122,7 +121,28 @@ func (d *Datastore) Delete(key datastore.Key) error {
 //   for entry := range entries { ... }
 //
 func (d *Datastore) Query(q query.Query) (query.Results, error) {
-	return nil, errors.New("unsupported")
+	//resb := query.NewResultBuilder(q)
+	var results []query.Entry
+	if err := d.db.View(func(tx *nutsdb.Tx) error {
+		entries, err := tx.PrefixScan(bucketName, nil, q.Limit)
+		if err != nil {
+			return err
+		}
+		results = make([]query.Entry, len(entries))
+		for i, entry := range entries {
+			results[i] = query.Entry{
+				Key:  string(entry.Key),
+				Size: int(entry.Size()),
+			}
+			if !q.KeysOnly {
+				results[i].Value = entry.Value
+			}
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return query.ResultsWithEntries(q, results), nil
 }
 
 // Sync guarantees that any Put or Delete calls under prefix that returned

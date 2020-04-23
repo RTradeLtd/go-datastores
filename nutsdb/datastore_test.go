@@ -21,6 +21,7 @@ func TestDatastore(t *testing.T) {
 			t.Fatal(err)
 		}
 		os.RemoveAll(testDir)
+		os.Remove(testDir)
 	}()
 	key := datastore.NewKey("hello/world")
 	// ensure that tests which return datastore.ErrNotFound
