@@ -128,11 +128,22 @@ func (d *Datastore) Query(q query.Query) (query.Results, error) {
 		if prefix != nil {
 			entries, _, err = tx.PrefixScan(bucketName, prefix, q.Offset, q.Limit)
 			if err != nil {
+				// we found no values so mask the error
+				if strings.Contains(err.Error(), "not found") {
+					err = nil
+				}
 				return err
 			}
 		} else {
 			entries, _, err = tx.PrefixSearchScan(
 				bucketName, prefix, string(prefix), q.Offset, q.Limit)
+			if err != nil {
+				// we found no values so mask the error
+				if strings.Contains(err.Error(), "not found") {
+					err = nil
+				}
+				return err
+			}
 		}
 		results = make([]query.Entry, 0, len(entries))
 		for _, entry := range entries {
