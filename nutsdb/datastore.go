@@ -1,6 +1,8 @@
 package nutsdb
 
 import (
+	"errors"
+
 	"github.com/ipfs/go-datastore"
 	"github.com/ipfs/go-datastore/query"
 	"github.com/xujiajun/nutsdb"
@@ -32,26 +34,49 @@ func New(dir string, opts nutsdb.Options) (*Datastore, error) {
 // Get will return ErrNotFound if the key is not mapped to a value.
 func (d *Datastore) Get(key datastore.Key) ([]byte, error) {
 	var data []byte
-	return data, d.db.View(func(tx *nutsdb.Tx) error {
+	if err := d.db.View(func(tx *nutsdb.Tx) error {
 		entry, err := tx.Get(bucketName, key.Bytes())
 		if err != nil {
 			return err
 		}
 		data = entry.Value
 		return nil
-	})
+	}); err != nil {
+		return nil, err
+	}
+	if data == nil {
+		return nil, datastore.ErrNotFound
+	}
+	return data, nil
 }
 
 // Has returns whether the `key` is mapped to a `value`.
 // In some contexts, it may be much cheaper only to check for existence of
 // a value, rather than retrieving the value itself. (e.g. HTTP HEAD).
 // The default implementation is found in `GetBackedHas`.
-func (d *Datastore) Has(key datastore.Key) (exists bool, err error)
+func (d *Datastore) Has(key datastore.Key) (exists bool, err error) {
+	if err = d.db.View(func(tx *nutsdb.Tx) error {
+		exists, err = tx.SHasKey(bucketName, key.Bytes())
+		return err
+	}); err != nil {
+		return
+	}
+	if !exists {
+		err = datastore.ErrNotFound
+	}
+	return
+}
 
 // GetSize returns the size of the `value` named by `key`.
 // In some contexts, it may be much cheaper to only get the size of the
 // value rather than retrieving the value itself.
-func (d *Datastore) GetSize(key datastore.Key) (size int, err error)
+func (d *Datastore) GetSize(key datastore.Key) (size int, err error) {
+	err = d.db.View(func(tx *nutsdb.Tx) error {
+		size, err = tx.LSize(bucketName, key.Bytes())
+		return err
+	})
+	return
+}
 
 // Put stores the object `value` named by `key`.
 //
@@ -69,11 +94,17 @@ func (d *Datastore) Put(key datastore.Key, value []byte) error {
 }
 
 // Batch enables batching multiple operations together to reduce disk I/O
-func (d *Datastore) Batch() (datastore.Batch, error)
+func (d *Datastore) Batch() (datastore.Batch, error) {
+	return nil, datastore.ErrBatchUnsupported
+}
 
 // Delete removes the value for given `key`. If the key is not in the
 // datastore, this method returns no error.
-func (d *Datastore) Delete(key datastore.Key) error
+func (d *Datastore) Delete(key datastore.Key) error {
+	return d.db.Update(func(tx *nutsdb.Tx) error {
+		return tx.Delete(bucketName, key.Bytes())
+	})
+}
 
 // Query searches the datastore and returns a query result. This function
 // may return before the query actually runs. To wait for the query:
@@ -87,7 +118,9 @@ func (d *Datastore) Delete(key datastore.Key) error
 //   entries, _ := result.Rest()
 //   for entry := range entries { ... }
 //
-func (d *Datastore) Query(q query.Query) (query.Results, error)
+func (d *Datastore) Query(q query.Query) (query.Results, error) {
+	return nil, errors.New("unsupported")
+}
 
 // Sync guarantees that any Put or Delete calls under prefix that returned
 // before Sync(prefix) was called will be observed after Sync(prefix)
@@ -95,7 +128,9 @@ func (d *Datastore) Query(q query.Query) (query.Results, error)
 // satisfy these requirements then Sync may be a no-op.
 //
 // If the prefix fails to Sync this method returns an error.
-func (d *Datastore) Sync(prefix datastore.Key) error
+func (d *Datastore) Sync(prefix datastore.Key) error {
+	return errors.New("unsupported")
+}
 
 // Close shutsdown the datastore
 func (d *Datastore) Close() error {
