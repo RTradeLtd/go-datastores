@@ -149,7 +149,7 @@ func (d *Datastore) Query(q query.Query) (query.Results, error) {
 	}); err != nil {
 		return nil, err
 	}
-	return query.ResultsWithEntries(q, results), nil
+	return query.NaiveQueryApply(q, query.ResultsWithEntries(q, results)), nil
 }
 
 // Sync guarantees that any Put or Delete calls under prefix that returned

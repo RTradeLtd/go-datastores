@@ -2,9 +2,12 @@ package nutsdb
 
 import (
 	"os"
+	"reflect"
+	"runtime"
 	"testing"
 
 	"github.com/ipfs/go-datastore"
+	"github.com/ipfs/go-datastore/query"
 	dstest "github.com/ipfs/go-datastore/test"
 )
 
@@ -95,8 +98,10 @@ func TestDatastore(t *testing.T) {
 }
 
 func TestSuite(t *testing.T) {
-	t.Skip("not yet implemented")
-	ds, err := New(testDir, DefaultOpts)
+	//t.Skip("not yet implemented")
+	opts := DefaultOpts
+	opts.SyncEnable = false
+	ds, err := New(testDir, opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,5 +112,23 @@ func TestSuite(t *testing.T) {
 		os.RemoveAll(testDir)
 		os.Remove(testDir)
 	}()
-	dstest.SubtestAll(t, ds)
+	for _, f := range dstest.BasicSubtests {
+		t.Run(runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name(), func(t *testing.T) {
+			f(t, ds)
+			q, err := ds.Query(query.Query{KeysOnly: true})
+			if err != nil {
+				t.Fatal(err)
+			}
+			res, err := q.Rest()
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, r := range res {
+				if err := ds.Delete(datastore.RawKey(r.Key)); err != nil {
+					t.Fatal(err)
+				}
+			}
+		})
+	}
+	//dstest.SubtestAll(t, ds)
 }
