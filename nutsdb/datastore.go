@@ -152,8 +152,10 @@ func (d *Datastore) Query(q query.Query) (query.Results, error) {
 	}); err != nil {
 		return nil, err
 	}
-	queryResults := query.ResultsReplaceQuery(query.ResultsWithEntries(q, results), q)
-	return query.NaiveQueryApply(q, queryResults), nil
+	query.Sort(q.Orders, results)
+	queryResults := query.ResultsWithEntries(q, results)
+	// queryResults = query.NaiveQueryApply(q, queryResults)
+	return queryResults, nil
 }
 
 // Sync guarantees that any Put or Delete calls under prefix that returned
