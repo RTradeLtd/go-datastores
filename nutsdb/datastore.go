@@ -123,10 +123,16 @@ func (d *Datastore) Query(q query.Query) (query.Results, error) {
 	if prefixKey != "/" {
 		prefix = []byte(prefixKey + "/")
 	}
-	if err := d.db.View(func(tx *nutsdb.Tx) error {
-		entries, err := tx.PrefixScan(bucketName, prefix, q.Limit)
-		if err != nil {
-			return err
+	if err := d.db.View(func(tx *nutsdb.Tx) (err error) {
+		var entries nutsdb.Entries
+		if prefix != nil {
+			entries, _, err = tx.PrefixScan(bucketName, prefix, q.Offset, q.Limit)
+			if err != nil {
+				return err
+			}
+		} else {
+			entries, _, err = tx.PrefixSearchScan(
+				bucketName, prefix, string(prefix), q.Offset, q.Limit)
 		}
 		results = make([]query.Entry, len(entries))
 		for i, entry := range entries {

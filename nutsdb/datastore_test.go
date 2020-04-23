@@ -2,8 +2,6 @@ package nutsdb
 
 import (
 	"os"
-	"reflect"
-	"runtime"
 	"testing"
 
 	"github.com/ipfs/go-datastore"
@@ -110,23 +108,22 @@ func TestSuite(t *testing.T) {
 		os.RemoveAll(testDir)
 		os.Remove(testDir)
 	}()
+	//	dstest.BasicSubtests
 	for _, f := range dstest.BasicSubtests {
-		t.Run(runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name(), func(t *testing.T) {
-			f(t, ds)
-			q, err := ds.Query(query.Query{KeysOnly: true})
-			if err != nil {
+		f(t, ds)
+		q, err := ds.Query(query.Query{KeysOnly: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		res, err := q.Rest()
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, r := range res {
+			if err := ds.Delete(datastore.RawKey(r.Key)); err != nil {
 				t.Fatal(err)
 			}
-			res, err := q.Rest()
-			if err != nil {
-				t.Fatal(err)
-			}
-			for _, r := range res {
-				if err := ds.Delete(datastore.RawKey(r.Key)); err != nil {
-					t.Fatal(err)
-				}
-			}
-		})
+		}
 	}
 	//dstest.SubtestAll(t, ds)
 }
