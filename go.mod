@@ -7,4 +7,5 @@ require (
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/ipfs/go-datastore v0.3.1
 	github.com/tevino/abool v0.0.0-20170917061928-9b9efcf221b5
+	github.com/xujiajun/nutsdb v0.5.0
 )
