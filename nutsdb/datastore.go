@@ -2,6 +2,8 @@ package nutsdb
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/ipfs/go-datastore"
 	"github.com/ipfs/go-datastore/query"
@@ -42,6 +44,9 @@ func (d *Datastore) Get(key datastore.Key) ([]byte, error) {
 		data = entry.Value
 		return nil
 	}); err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			err = datastore.ErrNotFound
+		}
 		return nil, err
 	}
 	if data == nil {
@@ -55,16 +60,7 @@ func (d *Datastore) Get(key datastore.Key) ([]byte, error) {
 // a value, rather than retrieving the value itself. (e.g. HTTP HEAD).
 // The default implementation is found in `GetBackedHas`.
 func (d *Datastore) Has(key datastore.Key) (exists bool, err error) {
-	if err = d.db.View(func(tx *nutsdb.Tx) error {
-		exists, err = tx.SHasKey(bucketName, key.Bytes())
-		return err
-	}); err != nil {
-		return
-	}
-	if !exists {
-		err = datastore.ErrNotFound
-	}
-	return
+	return datastore.GetBackedHas(d, key)
 }
 
 // GetSize returns the size of the `value` named by `key`.
@@ -75,6 +71,9 @@ func (d *Datastore) GetSize(key datastore.Key) (size int, err error) {
 		size, err = tx.LSize(bucketName, key.Bytes())
 		return err
 	})
+	if err != nil && err == nutsdb.ErrBucket {
+		err = datastore.ErrNotFound
+	}
 	return
 }
 
@@ -95,7 +94,11 @@ func (d *Datastore) Put(key datastore.Key, value []byte) error {
 
 // Batch enables batching multiple operations together to reduce disk I/O
 func (d *Datastore) Batch() (datastore.Batch, error) {
-	return nil, datastore.ErrBatchUnsupported
+	tx, err := d.db.Begin(true)
+	if err != nil {
+		return nil, err
+	}
+	return &nutBatcher{d: d, tx: tx}, nil
 }
 
 // Delete removes the value for given `key`. If the key is not in the
@@ -129,10 +132,17 @@ func (d *Datastore) Query(q query.Query) (query.Results, error) {
 //
 // If the prefix fails to Sync this method returns an error.
 func (d *Datastore) Sync(prefix datastore.Key) error {
-	return errors.New("unsupported")
+	return d.db.ActiveFile.Sync()
 }
 
 // Close shutsdown the datastore
 func (d *Datastore) Close() error {
-	return d.db.Close()
+	serr := d.Sync(datastore.Key{})
+	if err := d.db.Close(); err != nil {
+		serr = fmt.Errorf(
+			"closure error: %s, sync error: %s",
+			err, serr,
+		)
+	}
+	return serr
 }
