@@ -134,21 +134,26 @@ func (d *Datastore) Query(q query.Query) (query.Results, error) {
 			entries, _, err = tx.PrefixSearchScan(
 				bucketName, prefix, string(prefix), q.Offset, q.Limit)
 		}
-		results = make([]query.Entry, len(entries))
-		for i, entry := range entries {
-			results[i] = query.Entry{
+		results = make([]query.Entry, 0, len(entries))
+		for _, entry := range entries {
+			qen := query.Entry{
 				Key:  string(entry.Key),
 				Size: int(entry.Size()),
 			}
-			if !q.KeysOnly {
-				results[i].Value = entry.Value
+			if filter(q.Filters, qen) {
+				continue
 			}
+			if !q.KeysOnly {
+				qen.Value = entry.Value
+			}
+			results = append(results, qen)
 		}
 		return nil
 	}); err != nil {
 		return nil, err
 	}
-	return query.NaiveQueryApply(q, query.ResultsWithEntries(q, results)), nil
+	queryResults := query.ResultsReplaceQuery(query.ResultsWithEntries(q, results), q)
+	return query.NaiveQueryApply(q, queryResults), nil
 }
 
 // Sync guarantees that any Put or Delete calls under prefix that returned
@@ -171,4 +176,14 @@ func (d *Datastore) Close() error {
 		)
 	}
 	return serr
+}
+
+// filter returns _true_ if we should filter (skip) the entry
+func filter(filters []query.Filter, entry query.Entry) bool {
+	for _, f := range filters {
+		if !f.Filter(entry) {
+			return true
+		}
+	}
+	return false
 }
