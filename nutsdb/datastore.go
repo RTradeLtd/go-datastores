@@ -122,9 +122,16 @@ func (d *Datastore) Delete(key datastore.Key) error {
 //
 func (d *Datastore) Query(q query.Query) (query.Results, error) {
 	//resb := query.NewResultBuilder(q)
-	var results []query.Entry
+	var (
+		results   []query.Entry
+		prefix    []byte
+		prefixKey = datastore.NewKey(q.Prefix).String()
+	)
+	if prefixKey != "/" {
+		prefix = []byte(prefixKey + "/")
+	}
 	if err := d.db.View(func(tx *nutsdb.Tx) error {
-		entries, err := tx.PrefixScan(bucketName, nil, q.Limit)
+		entries, err := tx.PrefixScan(bucketName, prefix, q.Limit)
 		if err != nil {
 			return err
 		}

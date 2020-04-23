@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/ipfs/go-datastore"
+	dstest "github.com/ipfs/go-datastore/test"
 )
 
 var (
@@ -91,4 +92,19 @@ func TestDatastore(t *testing.T) {
 			t.Fatal("bad error returned")
 		}
 	})
+}
+
+func TestSuite(t *testing.T) {
+	ds, err := New(testDir, DefaultOpts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := ds.Close(); err != nil {
+			t.Fatal(err)
+		}
+		os.RemoveAll(testDir)
+		os.Remove(testDir)
+	}()
+	dstest.SubtestAll(t, ds)
 }
