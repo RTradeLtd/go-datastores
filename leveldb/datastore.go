@@ -28,7 +28,7 @@ type Datastore struct {
 	closed     *atomic.Bool
 	syncWrites bool
 	close      sync.Once
-	closeLock  sync.Mutex
+	closeLock  sync.RWMutex
 }
 
 // Options is an alias of syndtr/goleveldb/opt.Options which might be extended
@@ -110,7 +110,6 @@ func (d *Datastore) Query(q dsq.Query) (dsq.Results, error) {
 	// closing is only unsafe when there are pending iterators
 	// so we only lock when closing, and invoking iterators (query)
 	d.closeLock.Lock()
-	defer d.closeLock.Unlock()
 	var rnge *util.Range
 
 	// make a copy of the query for the fallback naive query implementation.
@@ -122,7 +121,9 @@ func (d *Datastore) Query(q dsq.Query) (dsq.Results, error) {
 		qNaive.Prefix = ""
 	}
 	iter := d.db.NewIterator(rnge, nil)
-	return query(iter, q, qNaive)
+	res, err := query(iter, q, qNaive)
+	d.closeLock.Unlock()
+	return res, err
 }
 
 // DiskUsage returns the current disk size used by this levelDB.

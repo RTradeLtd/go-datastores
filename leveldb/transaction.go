@@ -15,7 +15,10 @@ type transaction struct {
 }
 
 func (t *transaction) Commit() error {
-	return t.tx.Commit()
+	t.ds.closeLock.RLock()
+	err := t.tx.Commit()
+	t.ds.closeLock.RUnlock()
+	return err
 }
 
 func (t *transaction) Discard() {
@@ -23,14 +26,13 @@ func (t *transaction) Discard() {
 }
 
 func (t *transaction) Delete(key ds.Key) error {
-	return t.tx.Delete(key.Bytes(), &opt.WriteOptions{Sync: false})
+	err := t.tx.Delete(key.Bytes(), &opt.WriteOptions{Sync: false})
+	return err
 }
 func (t *transaction) Get(key ds.Key) ([]byte, error) {
 	val, err := t.tx.Get(key.Bytes(), nil)
-	if err != nil {
-		return nil, handleGetError(err)
-	}
-	return val, nil
+	err = handleGetError(err)
+	return val, err
 }
 
 func (t *transaction) Has(key ds.Key) (bool, error) {
@@ -45,9 +47,8 @@ func (t *transaction) Put(key ds.Key, value []byte) (err error) {
 }
 
 func (t *transaction) Query(q dsq.Query) (dsq.Results, error) {
-	// so we only lock when closing, and invoking iterators (query)
+	// so we only lock when closing, and invoking iterators (query & x commit)
 	t.ds.closeLock.Lock()
-	defer t.ds.closeLock.Unlock()
 	var rnge *util.Range
 	// make a copy of the query for the fallback naive query implementation.
 	// don't modify the original so res.Query() returns the correct results.
@@ -58,7 +59,9 @@ func (t *transaction) Query(q dsq.Query) (dsq.Results, error) {
 		qNaive.Prefix = ""
 	}
 	iter := t.tx.NewIterator(rnge, nil)
-	return query(iter, q, qNaive)
+	res, err := query(iter, q, qNaive)
+	t.ds.closeLock.Unlock()
+	return res, err
 }
 
 // NewTransaction returns a new transaction handler
@@ -66,9 +69,12 @@ func (d *Datastore) NewTransaction(readOnly bool) (ds.Txn, error) {
 	if d.closed.Load() {
 		return nil, ErrClosed
 	}
+	d.closeLock.RLock()
 	tx, err := d.db.OpenTransaction()
 	if err != nil {
 		return nil, err
 	}
-	return &transaction{d, tx}, nil
+	txx := &transaction{d, tx}
+	d.closeLock.RUnlock()
+	return txx, nil
 }
