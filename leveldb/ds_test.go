@@ -3,7 +3,6 @@ package leveldb
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"sort"
 	"testing"
@@ -30,28 +29,17 @@ var testcases = map[string]string{
 //  d, close := newDS(t)
 //  defer close()
 func newDS(t *testing.T) (*Datastore, func()) {
-	path, err := ioutil.TempDir("", "testing_leveldb_")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	d, err := NewDatastore(path, nil)
+	path := "testpath"
+	opts := Options{}
+	opts.NoSync = true
+	d, err := NewDatastore(path, &opts)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return d, func() {
-		os.RemoveAll(path)
 		d.Close()
+		os.RemoveAll(path)
 	}
-}
-
-// newDSMem returns an in-memory datastore.
-func newDSMem(t *testing.T) *Datastore {
-	d, err := NewDatastore("", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return d
 }
 
 func addTestCases(t *testing.T, d *Datastore, testcases map[string]string) {
@@ -136,10 +124,6 @@ func TestQuery(t *testing.T) {
 	defer close()
 	testQuery(t, d)
 }
-func TestQueryMem(t *testing.T) {
-	d := newDSMem(t)
-	testQuery(t, d)
-}
 
 func TestQueryRespectsProcess(t *testing.T) {
 	d, close := newDS(t)
@@ -152,10 +136,11 @@ func TestCloseRace(t *testing.T) {
 	for n := 0; n < 100; n++ {
 		d.Put(ds.NewKey(fmt.Sprintf("%d", n)), []byte(fmt.Sprintf("test%d", n)))
 	}
-
-	tx, _ := d.NewTransaction(false)
+	tx, err := d.NewTransaction(false)
+	if err != nil {
+		t.Fatal(err)
+	}
 	tx.Put(ds.NewKey("txnversion"), []byte("bump"))
-
 	closeCh := make(chan interface{})
 
 	go func() {
@@ -183,11 +168,6 @@ func TestCloseSafety(t *testing.T) {
 	if err == nil {
 		t.Error("committing after close should fail.")
 	}
-}
-
-func TestQueryRespectsProcessMem(t *testing.T) {
-	d := newDSMem(t)
-	addTestCases(t, d, testcases)
 }
 
 func expectMatches(t *testing.T, expect []string, actualR dsq.Results) {
@@ -266,11 +246,6 @@ func TestBatching(t *testing.T) {
 	testBatching(t, d)
 }
 
-func TestBatchingMem(t *testing.T) {
-	d := newDSMem(t)
-	testBatching(t, d)
-}
-
 func TestDiskUsage(t *testing.T) {
 	d, done := newDS(t)
 	addTestCases(t, d, testcases)
@@ -300,14 +275,6 @@ func TestDiskUsage(t *testing.T) {
 	_, err = d.DiskUsage()
 	if err == nil {
 		t.Fatal("DiskUsage should fail when we cannot walk path")
-	}
-}
-
-func TestDiskUsageInMem(t *testing.T) {
-	d := newDSMem(t)
-	du, _ := d.DiskUsage()
-	if du != 0 {
-		t.Fatal("inmem dbs have 0 disk usage")
 	}
 }
 
@@ -407,7 +374,7 @@ func TestTransactionManyOperations(t *testing.T) {
 }
 
 func TestSuite(t *testing.T) {
-	d := newDSMem(t)
-	defer d.Close()
+	d, close := newDS(t)
+	defer close()
 	dstest.SubtestAll(t, d)
 }

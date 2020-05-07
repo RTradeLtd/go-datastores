@@ -123,42 +123,8 @@ func (d *Datastore) Query(q dsq.Query) (dsq.Results, error) {
 		rnge = util.BytesPrefix([]byte(prefix + "/"))
 		qNaive.Prefix = ""
 	}
-	i := d.db.NewIterator(rnge, nil)
-	next := i.Next
-	if len(q.Orders) > 0 {
-		switch q.Orders[0].(type) {
-		case dsq.OrderByKey, *dsq.OrderByKey:
-			qNaive.Orders = nil
-		case dsq.OrderByKeyDescending, *dsq.OrderByKeyDescending:
-			next = func() bool {
-				next = i.Prev
-				return i.Last()
-			}
-			qNaive.Orders = nil
-		default:
-		}
-	}
-	r := dsq.ResultsFromIterator(q, dsq.Iterator{
-		Next: func() (dsq.Result, bool) {
-			if !next() {
-				return dsq.Result{}, false
-			}
-			k := string(i.Key())
-			e := dsq.Entry{Key: k, Size: len(i.Value())}
-
-			if !q.KeysOnly {
-				buf := make([]byte, len(i.Value()))
-				copy(buf, i.Value())
-				e.Value = buf
-			}
-			return dsq.Result{Entry: e}, true
-		},
-		Close: func() error {
-			i.Release()
-			return nil
-		},
-	})
-	return dsq.NaiveQueryApply(qNaive, r), nil
+	iter := d.db.NewIterator(rnge, nil)
+	return query(iter, q, qNaive)
 }
 
 // DiskUsage returns the current disk size used by this levelDB.
@@ -189,65 +155,4 @@ func (d *Datastore) Close() (err error) {
 		})
 	}
 	return
-}
-
-type leveldbBatch struct {
-	b          *leveldb.Batch
-	db         *leveldb.DB
-	syncWrites bool
-}
-
-// Batch returns a new levelDB batcher
-func (d *Datastore) Batch() (ds.Batch, error) {
-	return &leveldbBatch{
-		b:          new(leveldb.Batch),
-		db:         d.db,
-		syncWrites: d.syncWrites,
-	}, nil
-}
-
-func (b *leveldbBatch) Put(key ds.Key, value []byte) error {
-	b.b.Put(key.Bytes(), value)
-	return nil
-}
-
-func (b *leveldbBatch) Commit() error {
-	return b.db.Write(b.b, &opt.WriteOptions{Sync: b.syncWrites})
-}
-
-func (b *leveldbBatch) Delete(key ds.Key) error {
-	b.b.Delete(key.Bytes())
-	return nil
-}
-
-// A leveldb transaction embedding the accessor backed by the transaction.
-type transaction struct {
-	*Datastore
-	tx *leveldb.Transaction
-}
-
-func (t *transaction) Commit() error {
-	if t.closed.Load() {
-		return ErrClosed
-	}
-	return t.tx.Commit()
-}
-
-func (t *transaction) Discard() {
-	if t.closed.Load() {
-		return
-	}
-	t.tx.Discard()
-}
-
-// NewTransaction returns a new transaction handler
-func (d *Datastore) NewTransaction(readOnly bool) (ds.Txn, error) {
-	if d.closed.Load() {
-		return nil, ErrClosed
-	}
-	tx, err := d.db.OpenTransaction()
-	if err != nil {
-		return nil, err
-	}
-	return &transaction{Datastore: d, tx: tx}, nil
 }
