@@ -44,7 +44,6 @@ func NewDatastore(path string, opts *Options) (*Datastore, error) {
 	}
 
 	ds := Datastore{
-		//accessor: &accessor{ldb: db, syncWrites: true, closeLk: new(sync.RWMutex)},
 		db:         db,
 		path:       path,
 		closed:     atomic.NewBool(false),
