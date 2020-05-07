@@ -148,9 +148,9 @@ func (d *Datastore) Close() (err error) {
 	}
 	d.close.Do(func() {
 		d.closeLock.Lock()
-		defer d.closeLock.Unlock()
 		err = d.db.Close()
 		d.closed.Store(true)
+		d.closeLock.Unlock()
 	})
 	return
 }
