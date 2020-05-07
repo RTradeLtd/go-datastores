@@ -13,6 +13,18 @@ import (
 	dstest "github.com/ipfs/go-datastore/test"
 )
 
+func newDS(t *testing.T, sync bool) (*Datastore, func() error) {
+	ds, err := NewDatastore("pebble-test-ds", nil, sync)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return ds, func() error {
+		err := ds.Close()
+		os.RemoveAll("pebble-test-ds")
+		return err
+	}
+}
+
 func Test_NewDatastore(t *testing.T) {
 	type args struct {
 		path string
@@ -44,13 +56,11 @@ func Test_NewDatastore(t *testing.T) {
 }
 
 func Test_Batch(t *testing.T) {
-	ds, err := NewDatastore("./tmp", nil, true)
-	if err != nil {
-		t.Fatal(err)
-	}
+	ds, close := newDS(t, false)
 	t.Cleanup(func() {
-		ds.Close()
-		os.RemoveAll("./tmp")
+		if err := close(); err != nil {
+			t.Error(err)
+		}
 	})
 	key := datastore.NewKey("kek")
 	key2 := datastore.NewKey("keks")
@@ -97,13 +107,11 @@ func Test_Sync(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ds, err := NewDatastore("./tmp", nil, tt.args.sync)
-			if err != nil {
-				t.Fatal(err)
-			}
+			ds, close := newDS(t, tt.args.sync)
 			t.Cleanup(func() {
-				ds.Close()
-				os.RemoveAll("./tmp")
+				if err := close(); err != nil {
+					t.Error(err)
+				}
 			})
 			if ds.withSync != tt.args.sync {
 				t.Fatal("bad sync status")
@@ -116,13 +124,11 @@ func Test_Sync(t *testing.T) {
 }
 
 func Test_Datastore(t *testing.T) {
-	ds, err := NewDatastore("./tmp", nil, false)
-	if err != nil {
-		t.Fatal(err)
-	}
+	ds, close := newDS(t, false)
 	t.Cleanup(func() {
-		ds.Close()
-		os.RemoveAll("./tmp")
+		if err := close(); err != nil {
+			t.Error(err)
+		}
 	})
 	key := datastore.NewKey("kek")
 	key2 := datastore.NewKey("keks")
@@ -228,13 +234,11 @@ func Test_Datastore(t *testing.T) {
 
 func TestSuite(t *testing.T) {
 	t.Skip("pebble not fully supported")
-	ds, err := NewDatastore("./tmp", nil, false)
-	if err != nil {
-		t.Fatal(err)
-	}
+	ds, close := newDS(t, false)
 	t.Cleanup(func() {
-		ds.Close()
-		os.RemoveAll("./tmp")
+		if err := close(); err != nil {
+			t.Error(err)
+		}
 	})
 	dstest.SubtestAll(t, ds)
 }

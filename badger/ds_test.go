@@ -37,8 +37,9 @@ func newDS(t *testing.T) (*Datastore, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	d, err := NewDatastore(path, nil)
+	opt := DefaultOptions
+	opt.SyncWrites = false
+	d, err := NewDatastore(path, &opt)
 	if err != nil {
 		t.Fatal(err)
 	}
