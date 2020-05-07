@@ -44,10 +44,11 @@ func NewDatastore(path string, opts *Options) (*Datastore, error) {
 	}
 
 	ds := Datastore{
-		db:         db,
-		path:       path,
-		closed:     atomic.NewBool(false),
-		syncWrites: noSync == false,
+		db:     db,
+		path:   path,
+		closed: atomic.NewBool(false),
+		// if noSync is false this will be true
+		syncWrites: !noSync,
 	}
 	return &ds, nil
 }
@@ -149,6 +150,7 @@ func (d *Datastore) Close() (err error) {
 		d.closeLock.Lock()
 		defer d.closeLock.Unlock()
 		err = d.db.Close()
+		d.closed.Store(true)
 	})
 	return
 }

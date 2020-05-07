@@ -168,6 +168,9 @@ func TestCloseSafety(t *testing.T) {
 	if err == nil {
 		t.Error("committing after close should fail.")
 	}
+	if err := d.Close(); err != ErrClosed {
+		t.Fatal("bad error returned, got: ", err)
+	}
 }
 
 func expectMatches(t *testing.T, expect []string, actualR dsq.Results) {
@@ -265,6 +268,9 @@ func TestDiskUsage(t *testing.T) {
 	}
 
 	du2, err := d.DiskUsage()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if du2 <= du {
 		t.Fatal("size should have increased")
 	}
