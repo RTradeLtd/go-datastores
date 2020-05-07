@@ -147,12 +147,11 @@ func (d *Datastore) DiskUsage() (du uint64, err error) {
 func (d *Datastore) Close() (err error) {
 	if d.closed.Load() {
 		err = ErrClosed
-	} else {
+	}
+	d.close.Do(func() {
 		d.closeLock.Lock()
 		defer d.closeLock.Unlock()
-		d.close.Do(func() {
-			err = d.db.Close()
-		})
-	}
+		err = d.db.Close()
+	})
 	return
 }
