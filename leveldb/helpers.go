@@ -1,7 +1,9 @@
 package leveldb
 
 import (
+	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
+	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 )
 
@@ -41,4 +43,16 @@ func query(i iterator.Iterator, q dsq.Query, qNaive dsq.Query) (dsq.Results, err
 		},
 	})
 	return dsq.NaiveQueryApply(qNaive, r), nil
+}
+
+// handle get error is a helper function
+// to return the right error
+func handleGetError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if err == leveldb.ErrNotFound {
+		return ds.ErrNotFound
+	}
+	return err
 }

@@ -28,10 +28,7 @@ func (t *transaction) Delete(key ds.Key) error {
 func (t *transaction) Get(key ds.Key) ([]byte, error) {
 	val, err := t.tx.Get(key.Bytes(), nil)
 	if err != nil {
-		if err == leveldb.ErrNotFound {
-			return nil, ds.ErrNotFound
-		}
-		return nil, err
+		return nil, handleGetError(err)
 	}
 	return val, nil
 }

@@ -72,10 +72,7 @@ func (d *Datastore) Get(key ds.Key) (value []byte, err error) {
 	}
 	val, err := d.db.Get(key.Bytes(), nil)
 	if err != nil {
-		if err == leveldb.ErrNotFound {
-			return nil, ds.ErrNotFound
-		}
-		return nil, err
+		return nil, handleGetError(err)
 	}
 	return val, nil
 }
