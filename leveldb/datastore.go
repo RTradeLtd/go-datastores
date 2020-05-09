@@ -37,7 +37,10 @@ type Options = opt.Options
 
 // NewDatastore returns a new datastore backed by leveldb
 func NewDatastore(path string, opts *Options) (*Datastore, error) {
-	noSync := opts.NoSync
+	var noSync bool
+	if opts != nil {
+		noSync = opts.NoSync
+	}
 	db, err := leveldb.OpenFile(path, opts)
 	if err != nil {
 		return nil, err

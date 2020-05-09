@@ -119,6 +119,18 @@ func testQuery(t *testing.T, d *Datastore) {
 	expectOrderedMatches(t, keys, rs)
 }
 
+func TestEmptyOpts(t *testing.T) {
+	path := "emptyoptstest"
+	ds, err := NewDatastore(path, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := ds.Close(); err != nil {
+		t.Fatal(err)
+	}
+	os.RemoveAll(path)
+}
+
 func TestQuery(t *testing.T) {
 	d, close := newDS(t)
 	defer close()
