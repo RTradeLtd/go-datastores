@@ -147,9 +147,7 @@ func (d *Datastore) DiskUsage() (du uint64, err error) {
 
 // Close shuts down leveldb
 func (d *Datastore) Close() (err error) {
-	if d.closed.Load() {
-		err = ErrClosed
-	}
+	err = ErrClosed
 	d.close.Do(func() {
 		d.closeLock.Lock()
 		err = d.db.Close()
