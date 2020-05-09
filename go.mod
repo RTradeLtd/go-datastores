@@ -6,5 +6,7 @@ require (
 	github.com/cockroachdb/pebble v0.0.0-20200414215203-ce3b19e019b3
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/ipfs/go-datastore v0.4.4
+	github.com/syndtr/goleveldb v1.0.0
 	github.com/tevino/abool v0.0.0-20170917061928-9b9efcf221b5
+	go.uber.org/atomic v1.6.0
 )
