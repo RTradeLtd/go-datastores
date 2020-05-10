@@ -3,8 +3,8 @@ package leveldb
 import (
 	ds "github.com/ipfs/go-datastore"
 
-	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/opt"
+	"github.com/ucwong/goleveldb/leveldb"
+	"github.com/ucwong/goleveldb/leveldb/opt"
 )
 
 type leveldbBatch struct {

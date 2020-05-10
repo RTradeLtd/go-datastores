@@ -4,9 +4,9 @@ import (
 	ds "github.com/ipfs/go-datastore"
 
 	dsq "github.com/ipfs/go-datastore/query"
-	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/opt"
-	"github.com/syndtr/goleveldb/leveldb/util"
+	"github.com/ucwong/goleveldb/leveldb"
+	"github.com/ucwong/goleveldb/leveldb/opt"
+	"github.com/ucwong/goleveldb/leveldb/util"
 )
 
 type transaction struct {

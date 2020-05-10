@@ -3,8 +3,8 @@ package leveldb
 import (
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
-	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/iterator"
+	"github.com/ucwong/goleveldb/leveldb"
+	"github.com/ucwong/goleveldb/leveldb/iterator"
 )
 
 func query(i iterator.Iterator, q dsq.Query, qNaive dsq.Query) (dsq.Results, error) {
