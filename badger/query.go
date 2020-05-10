@@ -91,16 +91,13 @@ func (t *txn) query(q dsq.Query) (dsq.Results, error) {
 			skipped++
 		}
 	}
-	var (
-		value []byte
-		dest  []byte
-	)
+	var value []byte
 	for sent := 0; (q.Limit <= 0 || sent < q.Limit) && it.Valid(); it.Next() {
 		item = it.Item()
 		entry := dsq.Entry{Key: string(item.Key())}
 		var copyErr error
 		if !q.KeysOnly {
-			value, copyErr = item.ValueCopy(dest)
+			value, copyErr = item.ValueCopy(value)
 			if copyErr == nil {
 				entry.Value = value
 			}
