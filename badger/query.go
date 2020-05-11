@@ -85,7 +85,7 @@ func (t *txn) query(q dsq.Query) (dsq.Results, error) {
 		entry := dsq.Entry{Key: string(item.Key())}
 		var copyErr error
 		if !q.KeysOnly {
-			value, copyErr = item.ValueCopy(value)
+			value, copyErr = item.ValueCopy(nil)
 			if copyErr == nil {
 				entry.Value = value
 			}
