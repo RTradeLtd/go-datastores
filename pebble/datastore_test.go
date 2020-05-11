@@ -233,7 +233,6 @@ func Test_Datastore(t *testing.T) {
 }
 
 func TestSuite(t *testing.T) {
-	t.Skip("pebble not fully supported")
 	ds, close := newDS(t, false)
 	t.Cleanup(func() {
 		if err := close(); err != nil {
