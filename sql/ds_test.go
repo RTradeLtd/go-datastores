@@ -741,6 +741,60 @@ func TestManyKeysAndQuery(t *testing.T) {
 	SubtestManyKeysAndQuery(t)
 }
 
+func TestTxn(t *testing.T) {
+	d, done := newDS(t)
+	defer done()
+	txn, err := d.NewTransaction(false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testKey := ds.NewKey("helloworld")
+	failKey := ds.NewKey("donothave")
+	testValue := []byte("hello world")
+	if err := txn.Put(testKey, testValue); err != nil {
+		t.Fatal(err)
+	}
+	if err := txn.Delete(testKey); err != nil {
+		t.Fatal(err)
+	}
+	if err := txn.Put(testKey, testValue); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := txn.Query(dsq.Query{}); err == nil {
+		t.Fatal("error expected")
+	}
+	if size, err := txn.GetSize(testKey); err != nil {
+		t.Fatal(err)
+	} else if size != len(testValue) {
+		t.Fatalf("bad size, got %v, wanted %v", size, len(testValue))
+	}
+	if has, err := txn.Has(testKey); err != nil {
+		t.Fatal(err)
+	} else if !has {
+		t.Fatal("should have key")
+	}
+	if has, err := txn.Has(failKey); err != nil {
+		t.Fatal(err)
+	} else if has {
+		t.Fatal("should not have key")
+	}
+	if val, err := txn.Get(testKey); err != nil {
+		t.Fatal(err)
+	} else if string(val) != string(testValue) {
+		t.Fatal("bad value returned")
+	}
+	if _, err := txn.Get(failKey); err != ds.ErrNotFound {
+		t.Fatal("bad error returned")
+	}
+	if err := txn.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	if err := txn.Commit(); err == nil {
+		t.Fatal("error expected")
+	}
+	txn.Discard()
+}
+
 func TestSuite(t *testing.T) {
 	d, done := newDS(t)
 	defer done()
