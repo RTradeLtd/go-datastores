@@ -14,7 +14,8 @@ jobs:
       - image: circleci/postgres:latest
         environment:
          POSTGRES_HOST_AUTH_METHOD: trust
-
+         POSTGRES_DB: datastores
+         
 
     #### TEMPLATE_NOTE: go expects specific checkout path representing url
     #### expecting it in the form of
