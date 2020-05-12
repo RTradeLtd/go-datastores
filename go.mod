@@ -10,4 +10,5 @@ require (
 	github.com/tevino/abool v0.0.0-20170917061928-9b9efcf221b5
 	github.com/ucwong/goleveldb v1.0.3-0.20200508074755-578cba616f37
 	go.uber.org/atomic v1.6.0
+	go.uber.org/multierr v1.5.0
 )

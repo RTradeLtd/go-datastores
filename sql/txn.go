@@ -6,6 +6,7 @@ import (
 
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
+	"go.uber.org/multierr"
 )
 
 // ErrNotImplemented is returned when the SQL datastore does not yet implement the function call.
@@ -22,8 +23,8 @@ func (ds *Datastore) NewTransaction(_ bool) (ds.Txn, error) {
 	sqlTxn, err := ds.db.Begin()
 	if err != nil {
 		if sqlTxn != nil {
-			// nothing we can do about this error.
-			_ = sqlTxn.Rollback()
+			// wrap errors
+			err = multierr.Combine(err, sqlTxn.Rollback())
 		}
 
 		return nil, err
@@ -86,8 +87,7 @@ func (t *txn) Query(q dsq.Query) (dsq.Results, error) {
 func (t *txn) Put(key ds.Key, val []byte) error {
 	_, err := t.txn.Exec(t.queries.Put(), key.String(), val)
 	if err != nil {
-		_ = t.txn.Rollback()
-		return err
+		return multierr.Combine(err, t.txn.Rollback())
 	}
 	return nil
 }
@@ -96,8 +96,7 @@ func (t *txn) Put(key ds.Key, val []byte) error {
 func (t *txn) Delete(key ds.Key) error {
 	_, err := t.txn.Exec(t.queries.Delete(), key.String())
 	if err != nil {
-		_ = t.txn.Rollback()
-		return err
+		return multierr.Combine(err, t.txn.Rollback())
 	}
 	return nil
 }
@@ -106,8 +105,7 @@ func (t *txn) Delete(key ds.Key) error {
 func (t *txn) Commit() error {
 	err := t.txn.Commit()
 	if err != nil {
-		_ = t.txn.Rollback()
-		return err
+		return multierr.Combine(err, t.txn.Rollback())
 	}
 	return nil
 }
