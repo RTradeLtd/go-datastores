@@ -7,9 +7,15 @@ env:
   global:
     - GO111MODULE=on
 
+services:
+  - docker
+
+sudo: required
+
 install:
 - go get honnef.co/go/tools/cmd/staticcheck
 - go mod download
+- (cd sql ; make start-testenv )
 
 before_script:
 - go vet ./...
