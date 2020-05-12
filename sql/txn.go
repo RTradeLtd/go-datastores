@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	datastore "github.com/ipfs/go-datastore"
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
 )
@@ -19,7 +18,7 @@ type txn struct {
 }
 
 // NewTransaction creates a new database transaction, note the readOnly parameter is ignored by this implementation.
-func (ds *Datastore) NewTransaction(_ bool) (datastore.Txn, error) {
+func (ds *Datastore) NewTransaction(_ bool) (ds.Txn, error) {
 	sqlTxn, err := ds.db.Begin()
 	if err != nil {
 		if sqlTxn != nil {
