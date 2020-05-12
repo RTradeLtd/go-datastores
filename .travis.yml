@@ -15,7 +15,8 @@ sudo: required
 install:
 - go get honnef.co/go/tools/cmd/staticcheck
 - go mod download
-- (cd sql ; make start-testenv )
+# run this in cricleci
+# - (cd sql ; make start-testenv )
 
 before_script:
 - go vet ./...
@@ -24,7 +25,8 @@ before_script:
 
 script:
 - make verifiers
-- go test -v -race -short -coverprofile=coverage.txt -timeout 1800s ./...
+# run this in circleci
+# - go test -v -race -short -coverprofile=coverage.txt -timeout 1800s ./...
 
 after_success:
 - bash <(curl -s https://codecov.io/bash)
