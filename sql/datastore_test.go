@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"sync"
 	"testing"
 
 	ds "github.com/ipfs/go-datastore"
@@ -17,7 +16,6 @@ import (
 )
 
 var (
-	initOnce         sync.Once
 	connectionString = fmt.Sprintf(
 		"host=%s port=%s user=%s dbname=%s password=%s sslmode=disable",
 		"127.0.0.1", "5432", "postgres", "datastores", "password123",
