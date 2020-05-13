@@ -802,6 +802,7 @@ func expectMatches(t *testing.T, expect []string, actualR dsq.Results) {
 }
 
 func expectKeyOrderMatches(t *testing.T, actual dsq.Results, expect []string) {
+	t.Helper()
 	rs, err := actual.Rest()
 	if err != nil {
 		t.Error("error fetching dsq.Results", expect, actual)
@@ -822,6 +823,7 @@ func expectKeyOrderMatches(t *testing.T, actual dsq.Results, expect []string) {
 }
 
 func expectKeyFilterMatches(t *testing.T, actual dsq.Results, expect []string) {
+	t.Helper()
 	actualE, err := actual.Rest()
 	if err != nil {
 		t.Error(err)
