@@ -10,17 +10,28 @@ import (
 	_ "github.com/lib/pq" //postgres driver
 )
 
+var (
+	// AcceptTableRecreationWarning indicates that you accept all consequences from dropping your table and recreating it
+	AcceptTableRecreationWarning = "destructive warning accepted"
+)
+
 // Options are the postgres datastore options, reexported here for convenience.
 type Options struct {
-	Host           string
-	Port           string
-	User           string
-	Password       string
-	Database       string
-	Table          string
-	SSLMode        string
-	RunMigrations  bool
-	RecreateTables bool
+	// must be set to "warning is accepted"
+	// this will prevent anyone from accidentally nuking their database
+	// the act of a specific string ensures that its more difficult
+	// to take this action
+	AcceptRecreateWarning string
+	Host                  string
+	Port                  string
+	User                  string
+	Password              string
+	Database              string
+	Table                 string
+	SSLMode               string
+	RunMigrations         bool
+	RecreateTables        bool
+	CreateIndex           bool
 }
 
 // Queries are the postgres queries for a given table.
@@ -106,7 +117,8 @@ func (opts *Options) Create() (*sqlds.Datastore, error) {
 	if err != nil {
 		return nil, err
 	}
-	if opts.RecreateTables {
+	// only recreate the tables *IF* warning is accepted
+	if opts.RecreateTables && opts.AcceptRecreateWarning == AcceptTableRecreationWarning {
 		if _, err := db.Exec(
 			"DROP TABLE IF EXISTS blocks",
 		); err != nil {
@@ -119,6 +131,17 @@ func (opts *Options) Create() (*sqlds.Datastore, error) {
 		); err != nil {
 			return nil, multierr.Combine(err, db.Close())
 		}
+	}
+	if opts.CreateIndex {
+		if _, err := db.Exec(
+			fmt.Sprintf(
+				"CREATE INDEX IF NOT EXISTS %s_key_text_pattern_ops_idx ON %s (key text_pattern_ops)",
+				opts.Table, opts.Table,
+			),
+		); err != nil {
+			return nil, multierr.Combine(err, db.Close())
+		}
+
 	}
 	return sqlds.NewDatastore(db, NewQueries(opts.Table)), nil
 }

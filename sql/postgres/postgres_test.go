@@ -18,14 +18,16 @@ import (
 
 func newDS(t *testing.T) (*sqlds.Datastore, func(t *testing.T)) {
 	opts := &Options{
-		Host:           "127.0.0.1",
-		Port:           "5432",
-		User:           "postgres",
-		Database:       "datastores",
-		Password:       "password123",
-		SSLMode:        "disable",
-		RunMigrations:  true,
-		RecreateTables: true,
+		Host:                  "127.0.0.1",
+		Port:                  "5432",
+		User:                  "postgres",
+		Database:              "datastores",
+		Password:              "password123",
+		SSLMode:               "disable",
+		AcceptRecreateWarning: AcceptTableRecreationWarning,
+		RunMigrations:         true,
+		RecreateTables:        true,
+		CreateIndex:           true,
 	}
 	ds, err := opts.Create()
 	if err != nil {
