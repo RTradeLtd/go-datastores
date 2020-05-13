@@ -10,22 +10,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/RTradeLtd/go-datastores/testutils"
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
 	dstest "github.com/ipfs/go-datastore/test"
 )
-
-var testcases = map[string]string{
-	"/a":     "a",
-	"/a/b":   "ab",
-	"/a/b/c": "abc",
-	"/a/b/d": "a/b/d",
-	"/a/c":   "ac",
-	"/a/d":   "ad",
-	"/e":     "e",
-	"/f":     "f",
-	"/g":     "",
-}
 
 // returns datastore, and a function to call on exit.
 // (this garbage collects). So:
@@ -63,26 +52,6 @@ func newDSSync(t *testing.T, sync bool) (*Datastore, func()) {
 	return d, func() {
 		d.Close()
 		os.RemoveAll(path)
-	}
-}
-
-func addTestCases(t *testing.T, d *Datastore, testcases map[string]string) {
-	for k, v := range testcases {
-		dsk := ds.NewKey(k)
-		if err := d.Put(dsk, []byte(v)); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	for k, v := range testcases {
-		dsk := ds.NewKey(k)
-		v2, err := d.Get(dsk)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if string(v2) != v {
-			t.Errorf("%s values differ: %s != %s", k, v, v2)
-		}
 	}
 }
 
@@ -129,12 +98,12 @@ func TestQuery(t *testing.T) {
 	d, done := newDS(t)
 	defer done()
 
-	addTestCases(t, d, testcases)
+	testutils.AddTestCases(t, d, testutils.TestCases)
 	rs, err := d.Query(dsq.Query{Prefix: "/a/"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	expectMatches(t, []string{
+	testutils.ExpectMatches(t, []string{
 		"/a/b",
 		"/a/b/c",
 		"/a/b/d",
@@ -147,7 +116,7 @@ func TestQuery(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expectMatches(t, []string{
+	testutils.ExpectMatches(t, []string{
 		"/a/b/d",
 		"/a/c",
 	}, rs)
@@ -156,7 +125,7 @@ func TestQuery(t *testing.T) {
 func TestHas(t *testing.T) {
 	d, done := newDS(t)
 	defer done()
-	addTestCases(t, d, testcases)
+	testutils.AddTestCases(t, d, testutils.TestCases)
 
 	has, err := d.Has(ds.NewKey("/a/b/c"))
 	if err != nil {
@@ -180,14 +149,14 @@ func TestHas(t *testing.T) {
 func TestGetSize(t *testing.T) {
 	d, done := newDS(t)
 	defer done()
-	addTestCases(t, d, testcases)
+	testutils.AddTestCases(t, d, testutils.TestCases)
 
 	size, err := d.GetSize(ds.NewKey("/a/b/c"))
 	if err != nil {
 		t.Error(err)
 	}
 
-	if size != len(testcases["/a/b/c"]) {
+	if size != len(testutils.TestCases["/a/b/c"]) {
 		t.Error("")
 	}
 
@@ -200,7 +169,7 @@ func TestGetSize(t *testing.T) {
 func TestNotExistGet(t *testing.T) {
 	d, done := newDS(t)
 	defer done()
-	addTestCases(t, d, testcases)
+	testutils.AddTestCases(t, d, testutils.TestCases)
 
 	has, err := d.Has(ds.NewKey("/a/b/c/d"))
 	if err != nil {
@@ -227,7 +196,7 @@ func TestNotExistGet(t *testing.T) {
 func TestDelete(t *testing.T) {
 	d, done := newDS(t)
 	defer done()
-	addTestCases(t, d, testcases)
+	testutils.AddTestCases(t, d, testutils.TestCases)
 
 	has, err := d.Has(ds.NewKey("/a/b/c"))
 	if err != nil {
@@ -270,28 +239,6 @@ func TestGetEmpty(t *testing.T) {
 	}
 }
 
-func expectMatches(t *testing.T, expect []string, actualR dsq.Results) {
-	actual, err := actualR.Rest()
-	if err != nil {
-		t.Error(err)
-	}
-
-	if len(actual) != len(expect) {
-		t.Error("not enough", expect, actual)
-	}
-	for _, k := range expect {
-		found := false
-		for _, e := range actual {
-			if e.Key == k {
-				found = true
-			}
-		}
-		if !found {
-			t.Error(k, "not found")
-		}
-	}
-}
-
 func TestBatching(t *testing.T) {
 	d, done := newDS(t)
 	defer done()
@@ -301,7 +248,7 @@ func TestBatching(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for k, v := range testcases {
+	for k, v := range testutils.TestCases {
 		err := b.Put(ds.NewKey(k), []byte(v))
 		if err != nil {
 			t.Fatal(err)
@@ -313,7 +260,7 @@ func TestBatching(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for k, v := range testcases {
+	for k, v := range testutils.TestCases {
 		val, err := d.Get(ds.NewKey(k))
 		if err != nil {
 			t.Fatal(err)
@@ -351,7 +298,7 @@ func TestBatching(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expectMatches(t, []string{
+	testutils.ExpectMatches(t, []string{
 		"/a",
 		"/a/b/d",
 		"/a/c",
@@ -656,7 +603,7 @@ func TestDiskUsage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	addTestCases(t, d, testcases)
+	testutils.AddTestCases(t, d, testutils.TestCases)
 	d.Close()
 
 	d, err = NewDatastore(path, nil)
