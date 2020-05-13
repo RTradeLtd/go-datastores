@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	dstest "github.com/ipfs/go-datastore/test"
+
 	sqlds "github.com/RTradeLtd/go-datastores/sql"
 	"github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
@@ -155,7 +157,7 @@ func TestSetDefaultOptions(t *testing.T) {
 
 func TestQuery(t *testing.T) {
 	d, done := newDS(t)
-	defer done()
+	defer done(t)
 
 	addTestCases(t, d, testcases)
 
@@ -247,10 +249,10 @@ func TestQuery(t *testing.T) {
 
 func TestHas(t *testing.T) {
 	d, done := newDS(t)
-	defer done()
+	defer done(t)
 	addTestCases(t, d, testcases)
 
-	has, err := d.Has(ds.NewKey("/a/b/c"))
+	has, err := d.Has(datastore.NewKey("/a/b/c"))
 	if err != nil {
 		t.Error(err)
 	}
@@ -259,7 +261,7 @@ func TestHas(t *testing.T) {
 		t.Error("Key should be found")
 	}
 
-	has, err = d.Has(ds.NewKey("/a/b/c/d"))
+	has, err = d.Has(datastore.NewKey("/a/b/c/d"))
 	if err != nil {
 		t.Error(err)
 	}
@@ -271,10 +273,10 @@ func TestHas(t *testing.T) {
 
 func TestNotExistGet(t *testing.T) {
 	d, done := newDS(t)
-	defer done()
+	defer done(t)
 	addTestCases(t, d, testcases)
 
-	has, err := d.Has(ds.NewKey("/a/b/c/d"))
+	has, err := d.Has(datastore.NewKey("/a/b/c/d"))
 	if err != nil {
 		t.Error(err)
 	}
@@ -283,13 +285,13 @@ func TestNotExistGet(t *testing.T) {
 		t.Error("Key should not be found")
 	}
 
-	val, err := d.Get(ds.NewKey("/a/b/c/d"))
+	val, err := d.Get(datastore.NewKey("/a/b/c/d"))
 	if val != nil {
 		t.Error("Key should not be found")
 	}
 
-	if err != ds.ErrNotFound {
-		t.Error("Error was not set to ds.ErrNotFound")
+	if err != datastore.ErrNotFound {
+		t.Error("Error was not set to datastore.ErrNotFound")
 		if err != nil {
 			t.Error(err)
 		}
@@ -298,10 +300,10 @@ func TestNotExistGet(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	d, done := newDS(t)
-	defer done()
+	defer done(t)
 	addTestCases(t, d, testcases)
 
-	has, err := d.Has(ds.NewKey("/a/b/c"))
+	has, err := d.Has(datastore.NewKey("/a/b/c"))
 	if err != nil {
 		t.Error(err)
 	}
@@ -309,12 +311,12 @@ func TestDelete(t *testing.T) {
 		t.Error("Key should be found")
 	}
 
-	err = d.Delete(ds.NewKey("/a/b/c"))
+	err = d.Delete(datastore.NewKey("/a/b/c"))
 	if err != nil {
 		t.Error(err)
 	}
 
-	has, err = d.Has(ds.NewKey("/a/b/c"))
+	has, err = d.Has(datastore.NewKey("/a/b/c"))
 	if err != nil {
 		t.Error(err)
 	}
@@ -325,14 +327,14 @@ func TestDelete(t *testing.T) {
 
 func TestGetEmpty(t *testing.T) {
 	d, done := newDS(t)
-	defer done()
+	defer done(t)
 
-	err := d.Put(ds.NewKey("/a"), []byte{})
+	err := d.Put(datastore.NewKey("/a"), []byte{})
 	if err != nil {
 		t.Error(err)
 	}
 
-	v, err := d.Get(ds.NewKey("/a"))
+	v, err := d.Get(datastore.NewKey("/a"))
 	if err != nil {
 		t.Error(err)
 	}
@@ -344,7 +346,7 @@ func TestGetEmpty(t *testing.T) {
 
 func TestBatching(t *testing.T) {
 	d, done := newDS(t)
-	defer done()
+	defer done(t)
 
 	b, err := d.Batch()
 	if err != nil {
@@ -352,7 +354,7 @@ func TestBatching(t *testing.T) {
 	}
 
 	for k, v := range testcases {
-		err := b.Put(ds.NewKey(k), []byte(v))
+		err := b.Put(datastore.NewKey(k), []byte(v))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -364,7 +366,7 @@ func TestBatching(t *testing.T) {
 	}
 
 	for k, v := range testcases {
-		val, err := d.Get(ds.NewKey(k))
+		val, err := d.Get(datastore.NewKey(k))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -380,12 +382,12 @@ func TestBatching(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = b.Delete(ds.NewKey("/a/b"))
+	err = b.Delete(datastore.NewKey("/a/b"))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = b.Delete(ds.NewKey("/a/b/c"))
+	err = b.Delete(datastore.NewKey("/a/b/c"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -413,9 +415,9 @@ func TestBatching(t *testing.T) {
 
 func SubtestBasicPutGet(t *testing.T) {
 	d, done := newDS(t)
-	defer done()
+	defer done(t)
 
-	k := ds.NewKey("foo")
+	k := datastore.NewKey("foo")
 	val := []byte("Hello Datastore!")
 
 	err := d.Put(k, val)
@@ -482,7 +484,7 @@ func SubtestBasicPutGet(t *testing.T) {
 
 	size, err = d.GetSize(k)
 	switch err {
-	case ds.ErrNotFound:
+	case datastore.ErrNotFound:
 	case nil:
 		t.Fatal("expected error getting size after delete")
 	default:
@@ -495,12 +497,12 @@ func SubtestBasicPutGet(t *testing.T) {
 
 func TestNotFounds(t *testing.T) {
 	d, done := newDS(t)
-	defer done()
+	defer done(t)
 
-	badk := ds.NewKey("notreal")
+	badk := datastore.NewKey("notreal")
 
 	val, err := d.Get(badk)
-	if err != ds.ErrNotFound {
+	if err != datastore.ErrNotFound {
 		t.Fatal("expected ErrNotFound for key that doesnt exist, got: ", err)
 	}
 
@@ -518,7 +520,7 @@ func TestNotFounds(t *testing.T) {
 
 	size, err := d.GetSize(badk)
 	switch err {
-	case ds.ErrNotFound:
+	case datastore.ErrNotFound:
 	case nil:
 		t.Fatal("expected error getting size after delete")
 	default:
@@ -531,15 +533,15 @@ func TestNotFounds(t *testing.T) {
 
 func SubtestManyKeysAndQuery(t *testing.T) {
 	d, done := newDS(t)
-	defer done()
+	defer done(t)
 
-	var keys []ds.Key
+	var keys []datastore.Key
 	var keystrs []string
 	var values [][]byte
 	count := 100
 	for i := 0; i < count; i++ {
 		s := fmt.Sprintf("%dkey%d", i, i)
-		dsk := ds.NewKey(s)
+		dsk := datastore.NewKey(s)
 		keystrs = append(keystrs, dsk.String())
 		keys = append(keys, dsk)
 		buf := make([]byte, 64)
@@ -613,9 +615,9 @@ func SubtestManyKeysAndQuery(t *testing.T) {
 // Tests from basic_tests from go-datastore
 func TestBasicPutGet(t *testing.T) {
 	d, done := newDS(t)
-	defer done()
+	defer done(t)
 
-	k := ds.NewKey("foo")
+	k := datastore.NewKey("foo")
 	val := []byte("Hello Datastore!")
 
 	err := d.Put(k, val)
@@ -668,15 +670,15 @@ func TestBasicPutGet(t *testing.T) {
 
 func TestManyKeysAndQuery(t *testing.T) {
 	d, done := newDS(t)
-	defer done()
+	defer done(t)
 
-	var keys []ds.Key
+	var keys []datastore.Key
 	var keystrs []string
 	var values [][]byte
 	count := 100
 	for i := 0; i < count; i++ {
 		s := fmt.Sprintf("%dkey%d", i, i)
-		dsk := ds.NewKey(s)
+		dsk := datastore.NewKey(s)
 		keystrs = append(keystrs, dsk.String())
 		keys = append(keys, dsk)
 		buf := make([]byte, 64)
@@ -751,13 +753,13 @@ func TestManyKeysAndQuery(t *testing.T) {
 
 func TestTxn(t *testing.T) {
 	d, done := newDS(t)
-	defer done()
+	defer done(t)
 	txn, err := d.NewTransaction(false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	testKey := ds.NewKey("helloworld")
-	failKey := ds.NewKey("donothave")
+	testKey := datastore.NewKey("helloworld")
+	failKey := datastore.NewKey("donothave")
 	testValue := []byte("hello world")
 	if err := txn.Put(testKey, testValue); err != nil {
 		t.Fatal(err)
@@ -791,7 +793,7 @@ func TestTxn(t *testing.T) {
 	} else if string(val) != string(testValue) {
 		t.Fatal("bad value returned")
 	}
-	if _, err := txn.Get(failKey); err != ds.ErrNotFound {
+	if _, err := txn.Get(failKey); err != datastore.ErrNotFound {
 		t.Fatal("bad error returned")
 	}
 	if err := txn.Commit(); err != nil {
@@ -805,8 +807,7 @@ func TestTxn(t *testing.T) {
 
 func TestSuite(t *testing.T) {
 	d, done := newDS(t)
-	defer done()
-
+	defer done(t)
 	dstest.SubtestAll(t, d)
 }
 
