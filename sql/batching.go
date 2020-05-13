@@ -59,8 +59,5 @@ func (bt *batch) CommitContext(ctx context.Context) error {
 		}
 	}
 
-	if cErr := conn.Close(); cErr != nil {
-		err = multierr.Combine(err, cErr)
-	}
-	return err
+	return multierr.Combine(err, conn.Close())
 }
