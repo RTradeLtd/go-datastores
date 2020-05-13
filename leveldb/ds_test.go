@@ -2,6 +2,7 @@ package leveldb
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -10,6 +11,7 @@ import (
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
 	dstest "github.com/ipfs/go-datastore/test"
+	"github.com/ucwong/goleveldb/leveldb"
 )
 
 var testcases = map[string]string{
@@ -389,6 +391,24 @@ func TestTransactionManyOperations(t *testing.T) {
 	}
 
 	txn.Discard()
+}
+
+func TestHandleGetErr(t *testing.T) {
+	if err := handleGetError(nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := handleGetError(
+		leveldb.ErrNotFound,
+	); err != ds.ErrNotFound {
+		t.Fatal("bad error")
+	}
+	if err := handleGetError(
+		errors.New("misc err"),
+	); err == nil {
+		t.Fatal("error expected")
+	} else if err.Error() != "misc err" {
+		t.Fatal("bad error returned")
+	}
 }
 
 func TestSuite(t *testing.T) {
