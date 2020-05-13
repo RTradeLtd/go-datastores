@@ -37,11 +37,11 @@ func initPG() {
 		}
 
 		// drop/create the database.
-		_, err = db.Exec("DROP DATABASE IF EXISTS test_datastore")
+		_, err = db.Exec("DROP DATABASE IF EXISTS datastores")
 		if err != nil {
 			panic(err)
 		}
-		_, err = db.Exec("CREATE DATABASE test_datastore")
+		_, err = db.Exec("CREATE DATABASE datastores")
 		if err != nil {
 			panic(err)
 		}

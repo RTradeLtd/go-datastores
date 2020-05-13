@@ -5,19 +5,21 @@ import (
 	"fmt"
 
 	sqlds "github.com/RTradeLtd/go-datastores/sql"
+	"go.uber.org/multierr"
 
 	_ "github.com/lib/pq" //postgres driver
 )
 
 // Options are the postgres datastore options, reexported here for convenience.
 type Options struct {
-	Host     string
-	Port     string
-	User     string
-	Password string
-	Database string
-	Table    string
-	SSLMode  string
+	Host          string
+	Port          string
+	User          string
+	Password      string
+	Database      string
+	Table         string
+	SSLMode       string
+	RunMigrations bool
 }
 
 // Queries are the postgres queries for a given table.
@@ -103,7 +105,13 @@ func (opts *Options) Create() (*sqlds.Datastore, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	if opts.RunMigrations {
+		if _, err := db.Exec(
+			"CREATE TABLE IF NOT EXISTS blocks (key TEXT NOT NULL UNIQUE, data BYTEA NOT NULL)",
+		); err != nil {
+			return nil, multierr.Combine(err, db.Close())
+		}
+	}
 	return sqlds.NewDatastore(db, NewQueries(opts.Table)), nil
 }
 

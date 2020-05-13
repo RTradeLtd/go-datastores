@@ -8,6 +8,14 @@ import (
 	dsq "github.com/ipfs/go-datastore/query"
 )
 
+var (
+	_ ds.Datastore    = (*Datastore)(nil)
+	_ ds.Batching     = (*Datastore)(nil)
+	_ ds.TxnDatastore = (*Datastore)(nil)
+	// ErrNotImplemented is returned when the SQL datastore does not yet implement the function call.
+	ErrNotImplemented = fmt.Errorf("not implemented")
+)
+
 // Queries generates SQL queries for datastore operations.
 type Queries interface {
 	Delete() string
@@ -40,17 +48,13 @@ func (d *Datastore) Close() error {
 // Delete removes a row from the SQL database by the given key.
 func (d *Datastore) Delete(key ds.Key) error {
 	_, err := d.db.Exec(d.queries.Delete(), key.String())
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // Get retrieves a value from the SQL database by the given key.
 func (d *Datastore) Get(key ds.Key) (value []byte, err error) {
-	row := d.db.QueryRow(d.queries.Get(), key.String())
 	var out []byte
+	row := d.db.QueryRow(d.queries.Get(), key.String())
 
 	switch err := row.Scan(&out); err {
 	case sql.ErrNoRows:
@@ -79,11 +83,7 @@ func (d *Datastore) Has(key ds.Key) (exists bool, err error) {
 // Put "upserts" a row into the SQL database.
 func (d *Datastore) Put(key ds.Key, value []byte) error {
 	_, err := d.db.Exec(d.queries.Put(), key.String(), value)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // Query returns multiple rows from the SQL database based on the passed query parameters.
@@ -161,8 +161,8 @@ func (d *Datastore) Sync(key ds.Key) error {
 
 // GetSize determines the size in bytes of the value for a given key.
 func (d *Datastore) GetSize(key ds.Key) (int, error) {
-	row := d.db.QueryRow(d.queries.GetSize(), key.String())
 	var size int
+	row := d.db.QueryRow(d.queries.GetSize(), key.String())
 
 	switch err := row.Scan(&size); err {
 	case sql.ErrNoRows:
@@ -197,7 +197,4 @@ func queryWithParams(d *Datastore, q dsq.Query) (*sql.Rows, error) {
 	}
 
 	return d.db.Query(qNew)
-
 }
-
-var _ ds.Datastore = (*Datastore)(nil)

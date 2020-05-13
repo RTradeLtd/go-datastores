@@ -4,6 +4,7 @@ import (
 	"context"
 
 	ds "github.com/ipfs/go-datastore"
+	"go.uber.org/multierr"
 )
 
 type op struct {
@@ -46,7 +47,6 @@ func (bt *batch) CommitContext(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
 
 	for k, op := range bt.ops {
 		if op.delete {
@@ -59,7 +59,8 @@ func (bt *batch) CommitContext(ctx context.Context) error {
 		}
 	}
 
+	if cErr := conn.Close(); cErr != nil {
+		err = multierr.Combine(err, cErr)
+	}
 	return err
 }
-
-var _ ds.Batching = (*Datastore)(nil)

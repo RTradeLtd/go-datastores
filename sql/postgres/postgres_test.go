@@ -59,16 +59,20 @@ func TestSetDefaultOptions(t *testing.T) {
 	if opts.SSLMode != "disable" {
 		t.Fatal("badd sslmode")
 	}
+	if opts.RunMigrations {
+		t.Fatal("run migrations should be false")
+	}
 }
 
 func TestCreate(t *testing.T) {
 	opts := &Options{
-		Host:     "127.0.0.1",
-		Port:     "5432",
-		User:     "postgres",
-		Database: "datastores",
-		Password: "password123",
-		SSLMode:  "disable",
+		Host:          "127.0.0.1",
+		Port:          "5432",
+		User:          "postgres",
+		Database:      "datastores",
+		Password:      "password123",
+		SSLMode:       "disable",
+		RunMigrations: true,
 	}
 	ds, err := opts.Create()
 	if err != nil {

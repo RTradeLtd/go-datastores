@@ -2,15 +2,11 @@ package sqlds
 
 import (
 	"database/sql"
-	"fmt"
 
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
 	"go.uber.org/multierr"
 )
-
-// ErrNotImplemented is returned when the SQL datastore does not yet implement the function call.
-var ErrNotImplemented = fmt.Errorf("not implemented")
 
 type txn struct {
 	db      *sql.DB
@@ -26,7 +22,6 @@ func (ds *Datastore) NewTransaction(_ bool) (ds.Txn, error) {
 			// wrap errors
 			err = multierr.Combine(err, sqlTxn.Rollback())
 		}
-
 		return nil, err
 	}
 
@@ -38,8 +33,8 @@ func (ds *Datastore) NewTransaction(_ bool) (ds.Txn, error) {
 }
 
 func (t *txn) Get(key ds.Key) ([]byte, error) {
-	row := t.txn.QueryRow(t.queries.Get(), key.String())
 	var out []byte
+	row := t.txn.QueryRow(t.queries.Get(), key.String())
 
 	switch err := row.Scan(&out); err {
 	case sql.ErrNoRows:
@@ -52,8 +47,8 @@ func (t *txn) Get(key ds.Key) ([]byte, error) {
 }
 
 func (t *txn) Has(key ds.Key) (bool, error) {
-	row := t.txn.QueryRow(t.queries.Exists(), key.String())
 	var exists bool
+	row := t.txn.QueryRow(t.queries.Exists(), key.String())
 
 	switch err := row.Scan(&exists); err {
 	case sql.ErrNoRows:
@@ -66,8 +61,8 @@ func (t *txn) Has(key ds.Key) (bool, error) {
 }
 
 func (t *txn) GetSize(key ds.Key) (int, error) {
-	row := t.txn.QueryRow(t.queries.GetSize(), key.String())
 	var size int
+	row := t.txn.QueryRow(t.queries.GetSize(), key.String())
 
 	switch err := row.Scan(&size); err {
 	case sql.ErrNoRows:
@@ -87,27 +82,27 @@ func (t *txn) Query(q dsq.Query) (dsq.Results, error) {
 func (t *txn) Put(key ds.Key, val []byte) error {
 	_, err := t.txn.Exec(t.queries.Put(), key.String(), val)
 	if err != nil {
-		return multierr.Combine(err, t.txn.Rollback())
+		err = multierr.Combine(err, t.txn.Rollback())
 	}
-	return nil
+	return err
 }
 
 // Delete removes a value from the datastore that matches the given key.
 func (t *txn) Delete(key ds.Key) error {
 	_, err := t.txn.Exec(t.queries.Delete(), key.String())
 	if err != nil {
-		return multierr.Combine(err, t.txn.Rollback())
+		err = multierr.Combine(err, t.txn.Rollback())
 	}
-	return nil
+	return err
 }
 
 // Commit finalizes a transaction.
 func (t *txn) Commit() error {
 	err := t.txn.Commit()
 	if err != nil {
-		return multierr.Combine(err, t.txn.Rollback())
+		err = multierr.Combine(err, t.txn.Rollback())
 	}
-	return nil
+	return err
 }
 
 // Discard throws away changes recorded in a transaction without committing
@@ -115,5 +110,3 @@ func (t *txn) Commit() error {
 func (t *txn) Discard() {
 	_ = t.txn.Rollback()
 }
-
-var _ ds.TxnDatastore = (*Datastore)(nil)
