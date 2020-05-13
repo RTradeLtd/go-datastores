@@ -12,14 +12,15 @@ import (
 
 // Options are the postgres datastore options, reexported here for convenience.
 type Options struct {
-	Host          string
-	Port          string
-	User          string
-	Password      string
-	Database      string
-	Table         string
-	SSLMode       string
-	RunMigrations bool
+	Host           string
+	Port           string
+	User           string
+	Password       string
+	Database       string
+	Table          string
+	SSLMode        string
+	RunMigrations  bool
+	RecreateTables bool
 }
 
 // Queries are the postgres queries for a given table.
@@ -104,6 +105,13 @@ func (opts *Options) Create() (*sqlds.Datastore, error) {
 	))
 	if err != nil {
 		return nil, err
+	}
+	if opts.RecreateTables {
+		if _, err := db.Exec(
+			"DROP TABLE IF EXISTS blocks",
+		); err != nil {
+			return nil, err
+		}
 	}
 	if opts.RunMigrations {
 		if _, err := db.Exec(
