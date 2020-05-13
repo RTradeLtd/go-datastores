@@ -17,6 +17,7 @@ type Options struct {
 	Password string
 	Database string
 	Table    string
+	SSLMode  string
 }
 
 // Queries are the postgres queries for a given table.
@@ -95,9 +96,10 @@ func (q Queries) GetSize() string {
 // Create returns a datastore connected to postgres
 func (opts *Options) Create() (*sqlds.Datastore, error) {
 	opts.setDefaults()
-	fmtstr := "postgresql:///%s?host=%s&port=%s&user=%s&password=%s&sslmode=disable"
-	constr := fmt.Sprintf(fmtstr, opts.Database, opts.Host, opts.Port, opts.User, opts.Password)
-	db, err := sql.Open("postgres", constr)
+	db, err := sql.Open("postgres", fmt.Sprintf(
+		"host=%s port=%s user=%s dbname=%s password=%s sslmode=%s",
+		opts.Host, opts.Port, opts.User, opts.Database, opts.Password, opts.SSLMode,
+	))
 	if err != nil {
 		return nil, err
 	}
@@ -124,5 +126,8 @@ func (opts *Options) setDefaults() {
 
 	if opts.Table == "" {
 		opts.Table = "blocks"
+	}
+	if opts.SSLMode == "" {
+		opts.SSLMode = "disable"
 	}
 }
