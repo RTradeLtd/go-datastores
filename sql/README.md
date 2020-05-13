@@ -13,7 +13,39 @@
 ## Easy (Automatic)
 
 
-The `postgres` datastore has some helper utility to enable automatic table and index creation, as well as the ability to recreate the table by dropping it, and creating it.
+The `postgres` datastore has some helper utility to enable automatic table and index creation, as well as the ability to recreate the table by dropping it, and creating it. The following will make it easy to do this:
+
+
+```Go
+import (
+    pgds "github.com/RTradeLtd/go-datastores/sql/postgres"
+    "github.com/ipfs/go-datastore"
+)
+opts := &pgds.Options{
+	Host:                  "127.0.0.1",
+	Port:                  "5432",
+	User:                  "postgres",
+	Database:              "datastores",
+	Password:              "password123",
+    SSLMode:               "disable",
+    Table:                  "blocks",
+    // this will dropthe existing table
+	AcceptRecreateWarning: pgds.AcceptTableRecreationWarning,
+	RunMigrations:         true,
+	RecreateTables:        true,
+	CreateIndex:           true,
+}
+ds, err := opts.Create()
+if err != nil {
+	log.Fatal(err)
+}
+if err := ds.Put(
+    datastore.NewKey("much test very wow"), 
+    []byte("whose even going to read this anyways"),
+); err != nil {
+    log.Fatal(err)
+}
+```
 
 ## Hard (Manual)
 
