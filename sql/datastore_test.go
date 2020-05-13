@@ -24,33 +24,9 @@ var (
 	)
 )
 
-// Automatically re-create the test datastore.
-func initPG() {
-	initOnce.Do(func() {
-		// user:host-port@
-		db, err := sql.Open(
-			"postgres",
-			connectionString,
-		)
-		if err != nil {
-			panic(err)
-		}
-
-		// drop/create the database.
-		_, err = db.Exec("DROP DATABASE IF EXISTS datastores")
-		if err != nil {
-			panic(err)
-		}
-		_, err = db.Exec("CREATE DATABASE datastores")
-		if err != nil {
-			panic(err)
-		}
-		err = db.Close()
-		if err != nil {
-			panic(err)
-		}
-	})
-}
+// Akeeping this as a noop but leaving it incase we want to use
+// database initialization can be done when spinning it up
+func initPG() {}
 
 var testcases = map[string]string{
 	"/a":     "a",
