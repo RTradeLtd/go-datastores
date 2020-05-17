@@ -130,17 +130,17 @@ func (opts *Options) Create() (*sqlds.Datastore, error) {
 		); err != nil {
 			return nil, multierr.Combine(err, db.Close())
 		}
-	}
-	if opts.CreateIndex && opts.RunMigrations {
-		if _, err := db.Exec(
-			fmt.Sprintf(
-				"CREATE INDEX IF NOT EXISTS %s_key_text_pattern_ops_idx ON %s (key text_pattern_ops)",
-				opts.Table, opts.Table,
-			),
-		); err != nil {
-			return nil, multierr.Combine(err, db.Close())
-		}
+		if opts.CreateIndex {
+			if _, err := db.Exec(
+				fmt.Sprintf(
+					"CREATE INDEX IF NOT EXISTS %s_key_text_pattern_ops_idx ON %s (key text_pattern_ops)",
+					opts.Table, opts.Table,
+				),
+			); err != nil {
+				return nil, multierr.Combine(err, db.Close())
+			}
 
+		}
 	}
 	return sqlds.NewDatastore(db, NewQueries(opts.Table)), nil
 }
