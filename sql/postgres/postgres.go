@@ -11,16 +11,15 @@ import (
 )
 
 var (
-	// AcceptTableRecreationWarning indicates that you accept all consequences from dropping your table and recreating it
-	AcceptTableRecreationWarning = "destructive warning accepted"
+	// RecreateTables indicates that you accept all consequences from dropping your table and recreating it
+	RecreateTables = "recreate tables"
 )
 
 // Options are the postgres datastore options, reexported here for convenience.
 type Options struct {
-	// must be set to "warning is accepted"
-	// this will prevent anyone from accidentally nuking their database
-	// the act of a specific string ensures that its more difficult
-	// to take this action
+	// AcceptRecreateWarning is used as a safety check to pevent accidental deletion of existing tables and data
+	// To accept the warning, you must set the value of this field to `recreate tables`, which can be done manually
+	// or via the usage of the public `RecreateTables` variable
 	AcceptRecreateWarning string
 	Host                  string
 	Port                  string
@@ -118,7 +117,7 @@ func (opts *Options) Create() (*sqlds.Datastore, error) {
 		return nil, err
 	}
 	// only recreate the tables *IF* warning is accepted
-	if opts.RecreateTables && opts.AcceptRecreateWarning == AcceptTableRecreationWarning {
+	if opts.RecreateTables && opts.AcceptRecreateWarning == RecreateTables {
 		if _, err := db.Exec(
 			"DROP TABLE IF EXISTS blocks",
 		); err != nil {
@@ -132,7 +131,7 @@ func (opts *Options) Create() (*sqlds.Datastore, error) {
 			return nil, multierr.Combine(err, db.Close())
 		}
 	}
-	if opts.CreateIndex {
+	if opts.CreateIndex && opts.RunMigrations {
 		if _, err := db.Exec(
 			fmt.Sprintf(
 				"CREATE INDEX IF NOT EXISTS %s_key_text_pattern_ops_idx ON %s (key text_pattern_ops)",

@@ -24,7 +24,7 @@ func newDS(t *testing.T) (*sqlds.Datastore, func(t *testing.T)) {
 		Database:              "datastores",
 		Password:              "password123",
 		SSLMode:               "disable",
-		AcceptRecreateWarning: AcceptTableRecreationWarning,
+		AcceptRecreateWarning: RecreateTables,
 		RunMigrations:         true,
 		RecreateTables:        true,
 		CreateIndex:           true,

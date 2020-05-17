@@ -13,7 +13,7 @@
 ## Easy (Automatic)
 
 
-The `postgres` datastore has some helper utility to enable automatic table and index creation, as well as the ability to recreate the table by dropping it, and creating it. The following will make it easy to do this:
+The `postgres` datastore has some helper utility to enable automatic table and index creation, as well as the ability to recreate the table by dropping it, and creating it. Note that this setting requires `RunMigrations` also set to true. If not the `CreateIndex` setting will be ignored. The following options can be used to enable table creation, and index creation:
 
 
 ```Go
@@ -29,8 +29,8 @@ opts := &pgds.Options{
 	Password:              "password123",
     SSLMode:               "disable",
     Table:                  "blocks",
-    // this will dropthe existing table
-	AcceptRecreateWarning: pgds.AcceptTableRecreationWarning,
+    // this will drop the existing table
+	AcceptRecreateWarning: pgds.RecreateTables,
 	RunMigrations:         true,
 	RecreateTables:        true,
 	CreateIndex:           true,
