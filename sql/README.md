@@ -13,7 +13,11 @@
 ## Easy (Automatic)
 
 
-The `postgres` datastore has some helper utility to enable automatic table and index creation, as well as the ability to recreate the table by dropping it, and creating it. Note that this setting requires `RunMigrations` also set to true. If not the `CreateIndex` setting will be ignored. The following options can be used to enable table creation, and index creation:
+The `postgres` datastore has some helper utility to enable automatic table and index creation, as well as the ability to recreate the table by dropping it, and creating it. Note that this setting requires `RunMigrations` also set to true. If not the `CreateIndex` setting will be ignored. Additionally note that we will never delete tables unless specified.
+
+Note that we will never delete tables automatically, and tables will only be deleted when `RecreateTables` is set to true, and `AcceptRecreateWarning` is set to the value of `RecreateTables`. Additionally you must make sure to set `RunMigrations` otherwise we wont actually create the tables, and instead just delete the existing tables.
+
+The following options can be used to enable table creation, and index creation:
 
 
 ```Go
