@@ -10,6 +10,7 @@ import (
 	dsq "github.com/ipfs/go-datastore/query"
 	"github.com/ucwong/goleveldb/leveldb"
 	"github.com/ucwong/goleveldb/leveldb/opt"
+	"github.com/ucwong/goleveldb/leveldb/storage"
 	"github.com/ucwong/goleveldb/leveldb/util"
 	"go.uber.org/atomic"
 )
@@ -36,12 +37,22 @@ type Datastore struct {
 type Options = opt.Options
 
 // NewDatastore returns a new datastore backed by leveldb
+//
+// for path == "", an in memory backend will be chosen
 func NewDatastore(path string, opts *Options) (*Datastore, error) {
 	var noSync bool
 	if opts != nil {
 		noSync = opts.NoSync
 	}
-	db, err := leveldb.OpenFile(path, opts)
+
+	var err error
+	var db *leveldb.DB
+
+	if path == "" {
+		db, err = leveldb.Open(storage.NewMemStorage(), opts)
+	} else {
+		db, err = leveldb.OpenFile(path, opts)
+	}
 	if err != nil {
 		return nil, err
 	}
